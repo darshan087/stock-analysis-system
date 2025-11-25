@@ -26,7 +26,6 @@ if __name__ == "__main__":
     print("[+] API available at http://localhost:5000")
     print("\nEndpoints:")
     print("  GET  /                    - Index")
-    print("  GET  /api/health          - Health check")
     print("  GET  /api/stats           - Data statistics")
     print("  GET  /api/historical      - Historical prices")
     print("  GET  /api/forecast        - 5-day price forecast")
