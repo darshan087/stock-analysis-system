@@ -25,21 +25,48 @@ def fetch_stock_data(
     Returns:
         DataFrame with OHLCV data (Open, High, Low, Close, Volume, Adj Close)
     """
+    # Prefer local data files when available (data/Stocks)
+    ticker_key = ticker.lower()
+    candidates = [
+        os.path.join("data", "Stocks", f"{ticker_key}.us.txt"),
+        os.path.join("data", "Stocks", f"{ticker_key}.txt"),
+        os.path.join("data", "Stocks", f"{ticker_key}.csv"),
+    ]
+
+    # If ticker contains suffix like .us, allow direct match
+    if "." in ticker_key:
+        candidates.insert(0, os.path.join("data", "Stocks", f"{ticker_key}.txt"))
+
+    for path in candidates:
+        if os.path.exists(path):
+            try:
+                df = pd.read_csv(path, parse_dates=["Date"]) if 'Date' in pd.read_csv(path, nrows=1).columns else pd.read_csv(path, parse_dates=[0])
+                df = df.sort_values(by=df.columns[0]).reset_index(drop=True)
+                # Normalize columns
+                df.columns = [c.lower() for c in df.columns]
+                if 'date' not in df.columns:
+                    df.rename(columns={df.columns[0]: 'date'}, inplace=True)
+                return df
+            except Exception as e:
+                # If local read fails, continue to try yfinance
+                print(f"Warning: failed to read local file {path}: {e}")
+
+    # Fallback to yfinance if no local file
     try:
         if start_date and end_date:
             data = yf.download(ticker, start=start_date, end=end_date, progress=False)
         else:
             data = yf.download(ticker, period=period, progress=False)
-        
+
         # Reset index to have date as column
         data.reset_index(inplace=True)
         data.rename(columns={'Date': 'date'}, inplace=True)
-        
+
         # Convert to lowercase for consistency
         data.columns = [col.lower() for col in data.columns]
-        
+
         return data
-    
+
     except Exception as e:
         raise ValueError(f"Failed to fetch data for {ticker}: {str(e)}")
 
@@ -109,6 +136,18 @@ def get_latest_price(ticker: str) -> Optional[float]:
     Returns:
         Latest closing price or None if fetch fails
     """
+    # Try local file first
+    ticker_key = ticker.lower()
+    local_path = os.path.join("data", "Stocks", f"{ticker_key}.us.txt")
+    if os.path.exists(local_path):
+        try:
+            df = pd.read_csv(local_path)
+            df.columns = [c.lower() for c in df.columns]
+            # assume 'close' column exists
+            return float(df['close'].iloc[-1])
+        except Exception as e:
+            print(f"Warning: failed to read local latest price for {ticker}: {e}")
+
     try:
         data = yf.download(ticker, period="1d", progress=False)
         return float(data['Close'].iloc[-1])

@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "A:\stock-analysis\run.py", line 17, in <module>
+    from src.app.app import create_app
+  File "A:\stock-analysis\src\app\app.py", line 11, in <module>
+    from src.app.routes import api
+  File "A:\stock-analysis\src\app\routes.py", line 7, in <module>
+    from src.models.predictor import TimeSeriesForecaster, TrendAnalyzer, StockPredictor
+  File "A:\stock-analysis\src\models\predictor.py", line 5, in <module>
+    from sklearn.preprocessing import StandardScaler
+ModuleNotFoundError: No module named 'sklearn'

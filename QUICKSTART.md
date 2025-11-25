@@ -127,10 +127,21 @@ The notebook shows:
 
 ## 🔧 Configuration
 
-Edit `.env` to configure:
+Edit your environment or create a local `.env` file to configure runtime settings.
+
+Important: do NOT commit real secret keys to the repository.
+
+Example `.env` (local, never commit):
 ```env
 FLASK_ENV=development      # or production
-SECRET_KEY=your-secret-key # Flask session key
+# SECRET_KEY is sensitive — set it in your environment or a local .env file
+# SECRET_KEY=replace-with-a-secure-random-value
+```
+
+Set environment variable in PowerShell (example):
+```powershell
+# Windows PowerShell
+$env:SECRET_KEY = 'replace-with-a-secure-random-value'
 ```
 
 ## 📊 Technical Indicators

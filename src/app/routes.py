@@ -1,6 +1,7 @@
 """Flask API routes"""
 
 from flask import Blueprint, jsonify, request
+import os
 from src.utils.fetch_data import fetch_stock_data, validate_stock_data, get_latest_price
 from src.models.feature_engineering import engineer_features, prepare_ml_data
 from src.models.predictor import TimeSeriesForecaster, TrendAnalyzer, StockPredictor
@@ -9,6 +10,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import traceback
+import json
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -115,7 +117,13 @@ def forecast():
             "forecast": forecast_data,
             "avg_forecast": float(np.mean(forecast_values))
         }
-        
+
+        # Log forecast result to server stdout for visibility in terminal
+        try:
+            print(f"[forecast] {json.dumps({'ticker': result['ticker'], 'last_date': result['last_date'], 'avg_forecast': result['avg_forecast']})}")
+        except Exception:
+            print(f"[forecast] {result}")
+
         return jsonify(result), 200
     
     except Exception as e:
@@ -265,5 +273,32 @@ def historical():
             "data": records
         }), 200
     
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route("/tickers", methods=["GET"])
+def list_tickers():
+    """List available local ticker files under data/Stocks/"""
+    try:
+        stocks_dir = os.path.join(os.getcwd(), "data", "Stocks")
+        if not os.path.exists(stocks_dir):
+            return jsonify({"tickers": []}), 200
+
+        files = [f for f in os.listdir(stocks_dir) if os.path.isfile(os.path.join(stocks_dir, f))]
+
+        # Normalize filenames to ticker symbols (remove extensions)
+        tickers = []
+        for f in files:
+            name = f
+            # remove extensions like .us.txt, .txt, .csv
+            for ext in ['.us.txt', '.txt', '.csv']:
+                if name.lower().endswith(ext):
+                    name = name[:-len(ext)]
+            tickers.append(name.upper())
+
+        tickers = sorted(list(set(tickers)))
+        return jsonify({"tickers": tickers}), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
